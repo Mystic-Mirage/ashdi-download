@@ -81,7 +81,7 @@ async def get_episode_url(url: str, quality: int, *, session: ClientSession):
 async def download_playlist(url: str, output_format: str):
     _, name, _, _, _ = url.rsplit("/", 4)
     output = f"{name}.{output_format}"
-    ffmpeg = FFmpeg().option("y").input(url).output(output, c="copy")
+    ffmpeg = FFmpeg().option("y").option("nostdin").input(url).output(output, c="copy")
     await ffmpeg.execute()
 
 
