@@ -31,13 +31,13 @@ async def cli(
 
 class F(Protocol):
     def __call__(
-        self, *args, session: ClientSession = None, **kwargs
+        self, *args, session: ClientSession | None = None, **kwargs
     ) -> Awaitable[Any]: ...
 
 
 def aiohttp_session(f: F) -> F:
     @wraps(f)
-    async def wrapper(*args, session: ClientSession = None, **kwargs) -> Any:
+    async def wrapper(*args, session: ClientSession | None = None, **kwargs) -> Any:
         if session:
             return await f(*args, session=session, **kwargs)
 
