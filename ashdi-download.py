@@ -95,7 +95,7 @@ async def download_episode(
             await download_playlist(episode_url, output_format)
 
 
-async def get_episode_urls(url: str, *, session: ClientSession):
+async def get_sub_urls(url: str, *, session: ClientSession):
     async with session.get(url) as response:
         text = await response.text()
 
@@ -107,7 +107,7 @@ async def get_episode_urls(url: str, *, session: ClientSession):
 async def download_season(
     url: str, quality: int, output_format: str, *, session: ClientSession
 ):
-    urls = await get_episode_urls(url, session=session)
+    urls = await get_sub_urls(url, session=session)
     await download_multiple(
         download_episode, urls, quality, output_format, session=session
     )
