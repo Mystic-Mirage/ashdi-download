@@ -21,7 +21,7 @@ async def cli(
     season: list[str] | None,
     quality: int,
     output_format: str,
-):
+) -> None:
     if episode:
         await download_multiple(download_episode, episode, quality, output_format)
     elif season:
@@ -41,12 +41,14 @@ def aiohttp_session(f):
 
 
 @aiohttp_session
-async def download_multiple(f, urls, quality, output_format, *, session: ClientSession):
+async def download_multiple(
+    f, urls: list[str], quality: int, output_format: str, *, session: ClientSession
+) -> None:
     coros = [f(url, quality, output_format, session=session) for url in urls]
     await asyncio.gather(*coros)
 
 
-async def get_player_url(url: str, *, session: ClientSession):
+async def get_player_url(url: str, *, session: ClientSession) -> str | None:
     async with session.get(url) as response:
         text = await response.text()
 
@@ -55,7 +57,7 @@ async def get_player_url(url: str, *, session: ClientSession):
         return tag["src"]
 
 
-async def get_quality_url(url: str, *, session: ClientSession):
+async def get_quality_url(url: str, *, session: ClientSession) -> str:
     async with session.get(url) as response:
         text = await response.text()
 
@@ -65,7 +67,7 @@ async def get_quality_url(url: str, *, session: ClientSession):
     return re.search(pattern, tag.text).group(1)
 
 
-async def get_episode_url(url: str, quality: int, *, session: ClientSession):
+async def get_episode_url(url: str, quality: int, *, session: ClientSession) -> str:
     async with session.get(url) as response:
         text = await response.text()
 
@@ -78,7 +80,7 @@ async def get_episode_url(url: str, quality: int, *, session: ClientSession):
     return url
 
 
-async def download_playlist(url: str, output_format: str):
+async def download_playlist(url: str, output_format: str) -> None:
     _, name, _, _, _ = url.rsplit("/", 4)
     output = f"{name}.{output_format}"
     ffmpeg = FFmpeg().option("y").option("nostdin").input(url).output(output, c="copy")
@@ -87,7 +89,7 @@ async def download_playlist(url: str, output_format: str):
 
 async def download_episode(
     url: str, quality: int, output_format: str, *, session: ClientSession
-):
+) -> None:
     with suppress(ClientError):
         if player_url := await get_player_url(url, session=session):
             quality_url = await get_quality_url(player_url, session=session)
@@ -95,7 +97,7 @@ async def download_episode(
             await download_playlist(episode_url, output_format)
 
 
-async def get_sub_urls(url: str, *, session: ClientSession):
+async def get_sub_urls(url: str, *, session: ClientSession) -> list[str]:
     async with session.get(url) as response:
         text = await response.text()
 
@@ -106,7 +108,7 @@ async def get_sub_urls(url: str, *, session: ClientSession):
 
 async def download_season(
     url: str, quality: int, output_format: str, *, session: ClientSession
-):
+) -> None:
     urls = await get_sub_urls(url, session=session)
     await download_multiple(
         download_episode, urls, quality, output_format, session=session
