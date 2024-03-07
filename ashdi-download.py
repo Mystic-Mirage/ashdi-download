@@ -2,6 +2,7 @@ import asyncio
 import re
 from contextlib import suppress
 from functools import wraps
+from typing import Any, Awaitable, Protocol
 
 import asyncclick as click
 from aiohttp import ClientError, ClientSession
@@ -28,9 +29,15 @@ async def cli(
         await download_multiple(download_season, season, quality, output_format)
 
 
-def aiohttp_session(f):
+class F(Protocol):
+    def __call__(
+        self, *args, session: ClientSession = None, **kwargs
+    ) -> Awaitable[Any]: ...
+
+
+def aiohttp_session(f: F) -> F:
     @wraps(f)
-    async def wrapper(*args, session=None, **kwargs):
+    async def wrapper(*args, session: ClientSession = None, **kwargs) -> Any:
         if session:
             return await f(*args, session=session, **kwargs)
 
@@ -42,7 +49,7 @@ def aiohttp_session(f):
 
 @aiohttp_session
 async def download_multiple(
-    f, urls: list[str], quality: int, output_format: str, *, session: ClientSession
+    f: F, urls: list[str], quality: int, output_format: str, *, session: ClientSession
 ) -> None:
     coros = [f(url, quality, output_format, session=session) for url in urls]
     await asyncio.gather(*coros)
